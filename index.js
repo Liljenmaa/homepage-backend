@@ -3,7 +3,7 @@ const app = express();
 const bodyParser = require("body-parser");
 const cors = require("cors");
 
-app.use(cors())
+app.use(cors());
 app.use(bodyParser.json());
 
 let shoppingList = [
@@ -22,11 +22,11 @@ let shoppingList = [
   ]
 
 const logger = (request, response, next) => {
-  console.log('Method:', request.method)
-  console.log('Path:  ', request.path)
-  console.log('Body:  ', request.body)
-  console.log('---')
-  next()
+  console.log('Method:', request.method);
+  console.log('Path:  ', request.path);
+  console.log('Body:  ', request.body);
+  console.log('---');
+  next();
 }
 
 app.use(logger);
@@ -41,7 +41,7 @@ app.post("/shoppinglist", (req, res) => {
   const body = req.body;
 
   if (!body.content) {
-    return res.status(404).json({ error: "content missing" })
+    return res.status(404).json({ error: "content missing" });
   }
 
   const item = {
@@ -71,8 +71,6 @@ app.get("/shoppinglist/:id", (req, res) => {
   } else {
     res.status(404).end();
   }
-
-  res.json(item);
 })
 
 app.delete("/shoppinglist/:id", (req, res) => {
@@ -83,10 +81,10 @@ app.delete("/shoppinglist/:id", (req, res) => {
 })
 
 const error = (req, res) => {
-  res.status(404).send({error: 'unknown endpoint'})
+  res.status(404).send({error: 'unknown endpoint'});
 }
 
-app.use(error)
+app.use(error);
 
 const PORT = 3001;
 app.listen(PORT, () => {
