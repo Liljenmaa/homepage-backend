@@ -37,7 +37,7 @@ const generateId = () => {
   return maxId + 1;
 }
 
-app.post("/shoppinglist", (req, res) => {
+app.post("/api/shoppinglist", (req, res) => {
   const body = req.body;
 
   if (!body.content) {
@@ -54,15 +54,15 @@ app.post("/shoppinglist", (req, res) => {
   res.json(item);
 })
 
-app.get("/", (req, res) => {
+app.get("/api/test", (req, res) => {
   res.send("<h1>Hello World!</h1>");
 })
 
-app.get("/shoppinglist", (req, res) => {
+app.get("/api/shoppinglist", (req, res) => {
   res.json(shoppingList);
 })
 
-app.get("/shoppinglist/:id", (req, res) => {
+app.get("/api/shoppinglist/:id", (req, res) => {
   const id = Number(req.params.id);
   const item = shoppingList.find(item => item.id === id);
 
@@ -73,7 +73,7 @@ app.get("/shoppinglist/:id", (req, res) => {
   }
 })
 
-app.delete("/shoppinglist/:id", (req, res) => {
+app.delete("/api/shoppinglist/:id", (req, res) => {
   const id = Number(req.params.id);
   shoppingList = shoppingList.filter(item => item.id !== id);
 
