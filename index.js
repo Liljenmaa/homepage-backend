@@ -2,6 +2,7 @@ const express = require("express");
 const app = express();
 const bodyParser = require("body-parser");
 const cors = require("cors");
+const { pool } = require("./db");
 
 app.use(cors());
 app.use(bodyParser.json());
@@ -41,7 +42,7 @@ app.post("/api/shoppinglist", (req, res) => {
   const body = req.body;
 
   if (!body.content) {
-    return res.status(404).json({ error: "content missing" });
+    return res.status(400).json({ error: "content missing" });
   }
 
   const item = {
@@ -69,7 +70,7 @@ app.get("/api/shoppinglist/:id", (req, res) => {
   if (item) {
     res.json(item);
   } else {
-    res.status(404).end();
+    res.status(400).end();
   }
 })
 
@@ -78,6 +79,34 @@ app.delete("/api/shoppinglist/:id", (req, res) => {
   shoppingList = shoppingList.filter(item => item.id !== id);
 
   res.status(204).end();
+})
+
+app.get("/api/highscores", async (req, res) => {
+  try {
+    const dbres = await pool.query("SELECT nick, score FROM yahtzeescores ORDER BY score DESC");
+    res.json(dbres.rows);
+  } catch (error) {
+    res.status(500).end();
+  }
+})
+
+app.post("/api/highscores", async (req, res) => {
+  try {
+    if (req.body.nick === undefined || req.body.score === undefined) {
+      return res.status(400).json({ error: "nick or score missing" });
+    }
+
+    if (req.body.nick.length !== 3) {
+      return res.status(400).json({ error: "nick not 3 chars long" });
+    }
+
+    const query = "INSERT INTO yahtzeescores (nick, score) VALUES ('" + req.body.nick + "', " + req.body.score + ");";
+    await pool.query(query);
+
+    return res.status(201).end();
+  } catch (error) {
+    res.status(500).end();
+  }
 })
 
 const error = (req, res) => {
