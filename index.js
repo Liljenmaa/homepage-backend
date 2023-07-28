@@ -7,21 +7,6 @@ const { pool } = require("./db");
 app.use(cors());
 app.use(bodyParser.json());
 
-let shoppingList = [
-    {
-      "id": 0,
-      "content": "Seedless grapes"
-    },
-    {
-      "id": 1,
-      "content": "Eucalyptus menthol candies"
-    },
-    {
-      "id": 2,
-      "content": "Kane's"
-    }
-  ]
-
 const logger = (request, response, next) => {
   console.log('Method:', request.method);
   console.log('Path:  ', request.path);
@@ -32,58 +17,90 @@ const logger = (request, response, next) => {
 
 app.use(logger);
 
-const generateId = () => {
-  const maxId = shoppingList.length > 0 ?
-    shoppingList.map(n => n.id).sort((a,b) => a - b).reverse()[0] : 1;
-  return maxId + 1;
-}
-
-app.post("/api/shoppinglist", (req, res) => {
-  const body = req.body;
-
-  if (!body.content) {
-    return res.status(400).json({ error: "content missing" });
-  }
-
-  const item = {
-    content: body.content,
-    id: generateId()
-  }
-
-  shoppingList = shoppingList.concat(item);
-
-  res.json(item);
-})
-
 app.get("/api/test", (req, res) => {
   res.send("<h1>Hello World!</h1>");
 })
 
-app.get("/api/shoppinglist", (req, res) => {
-  res.json(shoppingList);
-})
+app.post("/api/shoppinglist", async (req, res) => {
+  try {
+    const body = req.body;
 
-app.get("/api/shoppinglist/:id", (req, res) => {
-  const id = Number(req.params.id);
-  const item = shoppingList.find(item => item.id === id);
+    if (!body.entry) {
+      return res.status(400).json({ error: "entry missing" });
+    }
 
-  if (item) {
-    res.json(item);
-  } else {
-    res.status(400).end();
+    if (body.entry.length > 75) {
+      return res.status(400).json({ error: "entry longer than 75 chars"});
+    }
+
+    const sanitizedEntry = body.entry.replace(/'/g, "''");
+
+    const query = "INSERT INTO shoppinglist(entry) VALUES ('" + sanitizedEntry + "') RETURNING *;";
+    const dbres = await pool.query(query);
+
+    return res.json(dbres.rows);
+  } catch (error) {
+    return res.status(500).end();
   }
 })
 
-app.delete("/api/shoppinglist/:id", (req, res) => {
-  const id = Number(req.params.id);
-  shoppingList = shoppingList.filter(item => item.id !== id);
+app.get("/api/shoppinglist", async (req, res) => {
+  try {
+    const query = "SELECT * FROM shoppinglist;";
+    const dbres = await pool.query(query);
+
+    return res.json(dbres.rows);
+  } catch (error) {
+    res.status(500).end();
+  }
+})
+
+app.get("/api/shoppinglist/:id", async (req, res) => {
+  try {
+    const id = req.params.id;
+
+    if (id === undefined) {
+      return res.status(400).json({ error: "id not defined" });
+    }
+
+    if (typeof Number(id) !== "number") {
+      return res.status(400).json({ error: "id not a number" });
+    }
+
+    const query = "SELECT * FROM shoppinglist WHERE id = " + id + ";";
+    const dbres = await pool.query(query);
+
+    return res.json(dbres.rows);
+  } catch (error) {
+    res.status(500).end();
+  }
+})
+
+app.delete("/api/shoppinglist/:id", async (req, res) => {
+  try {
+  const id = req.params.id;
+
+  if (id === undefined) {
+    return res.status(400).json({ error: "id not defined" });
+  }
+
+  if (typeof Number(id) !== "number") {
+    return res.status(400).json({ error: "id not a number" });
+  }
+
+  const query = "DELETE FROM shoppinglist WHERE id = " + id + ";";
+  const dbres = await pool.query(query);
 
   res.status(204).end();
+  } catch (error) {
+    res.status(500).end();
+  }
 })
 
 app.get("/api/highscores", async (req, res) => {
   try {
     const dbres = await pool.query("SELECT nick, score FROM yahtzeescores ORDER BY score DESC");
+
     res.json(dbres.rows);
   } catch (error) {
     res.status(500).end();
